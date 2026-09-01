@@ -603,10 +603,12 @@ class StatisticsView(generic.ListView, FilterView):
         stats_character = None
         characters_to_display = 25
 
+        # plain_objects, not objects: statistics only ever count, so the default manager's
+        # vote/favourite annotations are joins and a GROUP BY for data that is never read.
         if "all" in self.request.GET:
-            queryset = models.ScriptVersion.objects.all()
+            queryset = models.ScriptVersion.plain_objects.all()
         else:
-            queryset = models.ScriptVersion.objects.filter(latest=True)
+            queryset = models.ScriptVersion.plain_objects.filter(latest=True)
         queryset = queryset.filter(homebrewiness=models.Homebrewiness.CLOCKTOWER)
 
         if self.request.user.is_authenticated:
@@ -623,7 +625,7 @@ class StatisticsView(generic.ListView, FilterView):
         elif "tags" in self.kwargs:
             tags = models.ScriptTag.objects.get(pk=self.kwargs.get("tags"))
             if tags:
-                queryset = models.ScriptVersion.objects.filter(tags__in=[tags])
+                queryset = models.ScriptVersion.plain_objects.filter(tags__in=[tags])
 
         if "tags" in self.request.GET:
             try:

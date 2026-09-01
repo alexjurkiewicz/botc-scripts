@@ -23,10 +23,12 @@ class StatisticsAPI(APIView):
 
     def get(self, request, format=None):
         counter = Counter()
+        # plain_objects, not objects: this endpoint only ever counts, so the default manager's
+        # vote/favourite annotations are joins and a GROUP BY for data that is never read.
         if "all" in request.query_params:
-            queryset = models.ScriptVersion.objects.all()
+            queryset = models.ScriptVersion.plain_objects.all()
         else:
-            queryset = models.ScriptVersion.objects.filter(latest=True)
+            queryset = models.ScriptVersion.plain_objects.filter(latest=True)
 
         for param in request.query_params.lists():
             if param[0] == "character":
@@ -38,7 +40,7 @@ class StatisticsAPI(APIView):
                         continue
             elif param[0] == "character_or":
                 orig_queryset = queryset.all()
-                queryset = models.ScriptVersion.objects.none()
+                queryset = models.ScriptVersion.plain_objects.none()
                 for character in param[1]:
                     try:
                         character = models.ClocktowerCharacter.objects.get(character_id=character)
