@@ -619,7 +619,7 @@ class StatisticsView(generic.ListView, FilterView):
         if "character" in self.kwargs:
             try:
                 stats_character = models.ClocktowerCharacter.objects.get(character_id=self.kwargs.get("character"))
-                queryset = queryset.filter(content__contains=[{"id": stats_character.character_id}])
+                queryset = queryset.filter(characters__character_id=stats_character.character_id)
             except models.ClocktowerCharacter.DoesNotExist:
                 raise Http404()
         elif "tags" in self.kwargs:
