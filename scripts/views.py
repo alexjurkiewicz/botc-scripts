@@ -662,9 +662,8 @@ class StatisticsView(generic.ListView, FilterView):
             character_count[type.value] = Counter()
             num_count[type.value] = Counter()
 
-        # Build a lookup of character_id -> character, seeding every character's count to 0 so
-        # that characters which never appear in the filtered scripts still show up (e.g. in the
-        # "least common" lists).
+        # Seed every character's count to 0 so that characters which never appear in the
+        # filtered scripts still show up (e.g. in the "least common" lists).
         character_lookup = {}
         for character in cache.get_clocktower_characters().values():
             # If we're on a Character Statistics page, don't include this character in the count.
@@ -673,12 +672,15 @@ class StatisticsView(generic.ListView, FilterView):
             character_count[character.character_type][character] = 0
             character_lookup[character.character_id] = character
 
-        for content in queryset.values_list("content", flat=True):
-            ids_in_script = {item.get("id") for item in content if isinstance(item, dict)}
-            for character_id in ids_in_script:
-                character = character_lookup.get(character_id)
-                if character is not None:
-                    character_count[character.character_type][character] += 1
+        character_counts = (
+            models.ScriptVersionCharacter.objects.filter(script_version__in=queryset)
+            .values("character_id")
+            .annotate(script_count=Count("script_version"))
+        )
+        for row in character_counts:
+            character = character_lookup.get(row["character_id"])
+            if character is not None:
+                character_count[character.character_type][character] = row["script_count"]
 
         for type in models.CharacterType:
             context[type.value] = character_count[type.value].most_common(characters_to_display)

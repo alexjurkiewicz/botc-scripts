@@ -1,5 +1,6 @@
 from collections import Counter
 
+from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -55,10 +56,18 @@ class StatisticsAPI(APIView):
                     except models.ClocktowerCharacter.DoesNotExist:
                         continue
 
+        # Seed every character to 0 so characters absent from the filtered scripts are still
+        # reported, then overlay the counts from a single aggregate query.
         for character in models.ClocktowerCharacter.objects.all():
-            counter[character.character_id] = queryset.filter(
-                content__contains=[{"id": character.character_id}]
-            ).count()
+            counter[character.character_id] = 0
+
+        character_counts = (
+            models.ScriptVersionCharacter.objects.filter(script_version__in=queryset, character_id__in=list(counter))
+            .values("character_id")
+            .annotate(script_count=Count("script_version"))
+        )
+        for row in character_counts:
+            counter[row["character_id"]] = row["script_count"]
         data = {}
         if "total" in request.query_params:
             data["total"] = queryset.count()
