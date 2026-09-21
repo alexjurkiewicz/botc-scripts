@@ -40,6 +40,8 @@ class StatisticsAPI(APIView):
                     "character_id", flat=True
                 )
             )
+            if not character_ids:
+                continue
             if name == "character":
                 for character_id in character_ids:
                     queryset = queryset.filter(characters__character_id=character_id)
