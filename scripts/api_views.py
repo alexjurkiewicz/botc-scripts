@@ -30,6 +30,7 @@ class StatisticsAPI(APIView):
             queryset = models.ScriptVersion.plain_objects.all()
         else:
             queryset = models.ScriptVersion.plain_objects.filter(latest=True)
+        queryset = queryset.filter(homebrewiness=models.Homebrewiness.CLOCKTOWER)
 
         for name, values in request.query_params.lists():
             if name not in ("character", "character_or", "exclude"):
